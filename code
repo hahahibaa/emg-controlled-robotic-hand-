@@ -1,0 +1,105 @@
+// ESP32 Muscle Sensor (EMG) + Proportional Servo Control
+// Servo moves smoothly based on muscle contraction strength
+// Connections:
+// - Muscle Sensor: VCC->3.3V, GND->GND, OUT->GPIO34
+// - Servo: Red->Ext 5V, Brown/Black->Ext GND, Yellow->GPIO18
+
+#include <ESP32Servo.h>
+
+// Pin definitions
+#define MUSCLE_PIN 34
+#define SERVO_PIN 18
+
+Servo myServo;
+
+// EMG calibration values (based on your readings)
+const int EMG_MIN = 2000;    // Relaxed muscle baseline
+const int EMG_MAX = 4000;    // Fully contracted muscle
+
+// Servo angle range
+const int SERVO_MIN = 0;     // Angle when relaxed
+const int SERVO_MAX = 180;   // Angle when fully flexed
+
+// Smoothing filter
+const int NUM_SAMPLES = 8;
+int samples[NUM_SAMPLES];
+int sampleIndex = 0;
+
+// Deadzone to prevent jitter when relaxed
+const int DEADZONE = 100;    // Ignore changes smaller than this
+
+void setup() {
+  Serial.begin(115200);
+  
+  // Initialize servo with proper pulse widths
+  myServo.setPeriodHertz(50);
+  myServo.attach(SERVO_PIN, 500, 2400);
+  myServo.write(SERVO_MIN);
+  
+  // Initialize sample array
+  for (int i = 0; i < NUM_SAMPLES; i++) {
+    samples[i] = EMG_MIN;
+  }
+  
+  Serial.println("========================================");
+  Serial.println("EMG Proportional Servo Control Started!");
+  Serial.println("Relax: ~2000 -> Servo at 0°");
+  Serial.println("Flex:  ~4000 -> Servo at 180°");
+  Serial.println("========================================");
+}
+
+int getSmoothedEMG() {
+  // Add new sample
+  samples[sampleIndex] = analogRead(MUSCLE_PIN);
+  sampleIndex = (sampleIndex + 1) % NUM_SAMPLES;
+  
+  // Calculate moving average
+  long sum = 0;
+  for (int i = 0; i < NUM_SAMPLES; i++) {
+    sum += samples[i];
+  }
+  return sum / NUM_SAMPLES;
+}
+
+void loop() {
+  // Read raw and smoothed values
+  int rawEMG = analogRead(MUSCLE_PIN);
+  int smoothedEMG = getSmoothedEMG();
+  
+  // Map EMG to servo angle with deadzone
+  int targetAngle;
+  
+  if (smoothedEMG < EMG_MIN + DEADZONE) {
+    // In deadzone - stay at minimum
+    targetAngle = SERVO_MIN;
+  } else {
+    // Map smoothed value to servo angle
+    targetAngle = map(smoothedEMG, EMG_MIN, EMG_MAX, SERVO_MIN, SERVO_MAX);
+    targetAngle = constrain(targetAngle, SERVO_MIN, SERVO_MAX);
+  }
+  
+  // Move servo
+  myServo.write(targetAngle);
+  
+  // Print debug info
+  Serial.print("Raw: ");
+  Serial.print(rawEMG);
+  Serial.print(" | Smooth: ");
+  Serial.print(smoothedEMG);
+  Serial.print(" | Servo: ");
+  Serial.print(targetAngle);
+  Serial.print("° | ");
+  
+  // Show muscle state
+  if (smoothedEMG < EMG_MIN + 200) {
+    Serial.println("😌 Relaxed");
+  } else if (smoothedEMG < EMG_MIN + 800) {
+    Serial.println("💪 Light flex");
+  } else if (smoothedEMG < EMG_MIN + 1400) {
+    Serial.println("💪💪 Medium flex");
+  } else {
+    Serial.println("💪💪💪 FULL POWER!");
+  }
+  
+  delay(20);
+}

@@ -1,0 +1,33 @@
+🧠 System Working Principle
+
+Muscle contraction generates small electrical signals (EMG).
+
+Gel electrodes capture the bio-signal from the skin.
+
+The BioAmp EXG Pill amplifies the signal to a readable voltage level.
+
+The ESP32 reads the analog signal using its ADC.
+
+Signal processing or threshold detection determines whether a contraction occurred.
+
+Based on the detected signal, the ESP32 sends commands to move the robotic hand servos.
+
+📊 Signal Processing Approach
+
+Basic processing steps used:
+
+Analog signal acquisition
+
+Noise filtering
+
+Threshold detection
+
+Command generation
+
+Future improvements may include:
+
+Digital filtering
+
+Feature extraction
+
+Machine learning based gesture recognition

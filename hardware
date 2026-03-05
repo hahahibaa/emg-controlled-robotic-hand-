@@ -1,0 +1,22 @@
+Component	Purpose
+ESP32	Main microcontroller
+BioAmp EXG Pill	Bio-signal amplifier
+Gel Electrodes	Signal acquisition from skin
+Robotic Hand + Servos	Actuation
+Jumper Wires	Connections
+External Power Source	Power supply
+🔌 Hardware Connections
+EXG Pill → ESP32
+
+OUT → ESP32 Analog Pin (GPIO34 or GPIO35)
+VCC → 3.3V
+GND → GND
+
+Electrodes Placement
+
+Three electrodes are used:
+Signal electrode → muscle group (forearm or target muscle)
+Reference electrode → nearby muscle area
+Ground electrode → bony area (elbow or wrist)
+
+This configuration helps reduce noise and improve signal quality.
